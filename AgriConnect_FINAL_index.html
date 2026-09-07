@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgriConnect | Farm Direct</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4faf6;color:#123326}
+button,input,select{font:inherit}button{cursor:pointer}
+.nav{height:72px;background:#fff;border-bottom:1px solid #dbe9e0;display:flex;align-items:center;justify-content:space-between;padding:0 7%;position:sticky;top:0;z-index:20}
+.logo{font-size:30px;font-weight:800;color:#159447}.logo span{color:#102e23}
+.navlinks{display:flex;gap:28px;align-items:center}.navlinks button{border:0;background:none;font-weight:700;color:#111}.cartBtn{border:0;background:#eaf8ef;padding:10px 15px;border-radius:12px;font-weight:700;color:#159447}
+main{max-width:1250px;margin:auto;padding:35px 20px}.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:35px;align-items:center;padding:45px 0}.hero h1{font-size:58px;line-height:1.05;margin:15px 0}.hero h1 span{color:#159447}.hero p{font-size:20px;color:#567064;line-height:1.6}.heroCard,.card,.stat,.order,.product{background:#fff;border:1px solid #dceae2;border-radius:20px;box-shadow:0 8px 25px #163c2210}.heroCard{padding:35px}.btn{border:0;border-radius:12px;padding:13px 20px;font-weight:800}.primary{background:#159447;color:white}.secondary{background:white;border:1px solid #cfe1d7;color:#159447}.actions{display:flex;gap:12px;flex-wrap:wrap}.sectionTitle{margin:20px 0}.muted{color:#668075}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}.product{overflow:hidden}.product img{width:100%;height:160px;object-fit:cover}.productBody{padding:16px}.price{font-size:22px;font-weight:800;color:#159447;margin:12px 0}.tag{display:inline-block;background:#eef8f1;color:#167c3e;border-radius:20px;padding:5px 9px;font-size:12px;font-weight:700}.search{width:100%;padding:15px;border:1px solid #d5e5dc;border-radius:12px;margin:15px 0}.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}.filters button{padding:10px 16px;border:1px solid #d5e5dc;border-radius:20px;background:#fff;font-weight:700}.filters .active{background:#159447;color:#fff}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin:25px 0}.stat{padding:22px}.stat b{font-size:28px;color:#159447}.layout2{display:grid;grid-template-columns:1fr 1fr;gap:20px}.card{padding:25px}.form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.form label{font-weight:700;font-size:14px}.form input,.form select{width:100%;padding:12px;margin-top:6px;border:1px solid #d5e5dc;border-radius:10px}.full{grid-column:1/-1}.listing{display:flex;justify-content:space-between;align-items:center;border:1px solid #dceae2;padding:15px;border-radius:14px;margin:10px 0}.order{padding:22px;margin:15px 0}.orderHead{display:flex;justify-content:space-between;gap:20px}.status{color:#159447;font-weight:800}.timeline{display:flex;gap:7px;margin-top:18px;flex-wrap:wrap}.step{padding:10px 12px;background:#f0f5f2;border-left:4px solid #d3e3da;border-radius:8px}.step.done{border-left-color:#159447;background:#eaf8ef}.modalWrap{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;z-index:50}.modal{background:#fff;padding:28px;border-radius:18px;width:min(480px,92%)}.modal input,.modal select{width:100%;padding:12px;margin:8px 0 15px;border:1px solid #ccdcd3;border-radius:10px}.hidden{display:none!important}.qualityBox{text-align:center;padding:30px}.score{font-size:48px;font-weight:800;color:#159447}.adminTable{width:100%;border-collapse:collapse}.adminTable th,.adminTable td{padding:12px;border-bottom:1px solid #e1ebe5;text-align:left}.notice{background:#eaf8ef;border:1px solid #cfe9d8;padding:15px;border-radius:12px;margin:15px 0}footer{margin-top:50px;background:#092b1d;color:white;padding:40px 7%}
+@media(max-width:900px){.hero,.layout2{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr)}.stats{grid-template-columns:repeat(2,1fr)}.navlinks{gap:10px}.nav{padding:0 3%}.hero h1{font-size:42px}}
+@media(max-width:600px){.grid,.stats,.form{grid-template-columns:1fr}.navlinks button:not(.cartBtn){display:none}.hero h1{font-size:36px}}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <div class="logo"><span>Agri</span>Connect 🌱</div>
+  <div class="navlinks">
+    <button onclick="showHome()">Home</button>
+    <button onclick="showMarketplace()">Marketplace</button>
+    <button onclick="showFarmer()">Farmer Dashboard</button>
+    <button onclick="showOrders()">Orders</button>
+    <button onclick="openLogin()" class="secondary">Login</button>
+    <button onclick="openCart()" class="cartBtn">🛒 <span id="cartCount">0</span></button>
+  </div>
+</nav>
+
+<div id="app"></div>
+
+<div id="modalRoot"></div>
+
+<footer>
+  <div class="logo"><span style="color:#159447">Agri</span>Connect 🌱</div>
+  <p>Fewer intermediaries · Better farmer earnings · Fair consumer prices</p>
+</footer>
+
+<script>
+const API="/api";
+let products=[];
+let orders=[];
+let cart=[];
+let currentUser={role:"consumer",id:"",name:"Consumer"};
+
+const demoProducts=[
+ {id:"d1",name:"Tomatoes",crop:"Tomato",category:"Vegetables",price:38,quantity:120,quality:"A",farmer:"Ramesh Kumar",farmerId:"FARM001",location:"Medchal, Telangana"},
+ {id:"d2",name:"Potatoes",crop:"Potato",category:"Vegetables",price:30,quantity:200,quality:"A",farmer:"Suresh Reddy",farmerId:"FARM002",location:"Shamirpet, Telangana"},
+ {id:"d3",name:"Onions",crop:"Onion",category:"Vegetables",price:32,quantity:160,quality:"A",farmer:"Anil Kumar",farmerId:"FARM003",location:"Vikarabad, Telangana"},
+ {id:"d4",name:"Carrots",crop:"Carrot",category:"Vegetables",price:42,quantity:90,quality:"A",farmer:"Lakshmi Devi",farmerId:"FARM004",location:"Rangareddy, Telangana"},
+ {id:"d5",name:"Bananas",crop:"Banana",category:"Fruits",price:48,quantity:100,quality:"A",farmer:"Ravi",farmerId:"FARM005",location:"Medak, Telangana"},
+ {id:"d6",name:"Mangoes",crop:"Mango",category:"Fruits",price:75,quantity:80,quality:"A",farmer:"Srinivas",farmerId:"FARM006",location:"Nizamabad, Telangana"},
+ {id:"d7",name:"Spinach",crop:"Spinach",category:"Leafy Greens",price:25,quantity:60,quality:"A",farmer:"Geetha",farmerId:"FARM007",location:"Sangareddy, Telangana"},
+ {id:"d8",name:"Cabbage",crop:"Cabbage",category:"Vegetables",price:28,quantity:110,quality:"A",farmer:"Prakash",farmerId:"FARM008",location:"Warangal, Telangana"}
+];
+
+const stages=["Order Placed","Farmer Confirmed","Packed","Picked Up","Out for Delivery","Delivered"];
+
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+function money(v){return "₹"+Number(v||0).toFixed(0);}
+function findProduct(id){return products.find(p=>String(p.id)===String(id));}
+
+async function loadData(){
+ try{
+   const r=await fetch(API+"/produce");
+   if(r.ok){const data=await r.json();products=Array.isArray(data)&&data.length?data:demoProducts.slice();}
+   else products=demoProducts.slice();
+ }catch(e){products=demoProducts.slice();}
+ try{
+   const r=await fetch(API+"/orders");
+   if(r.ok){const data=await r.json();orders=Array.isArray(data)?data:[];}
+ }catch(e){orders=[];}
+ updateCartCount();
+}
+
+function navTitle(title,sub=""){return `<h1 class="sectionTitle">${title}</h1>${sub?`<p class="muted">${sub}</p>`:""}`;}
+
+function showHome(){
+ document.getElementById("app").innerHTML=`
+ <main>
+  <section class="hero">
+   <div>
+    <span class="tag">🌱 FARM TO CONSUMER</span>
+    <h1>Fresh from the <span>farm.</span><br>Fair for everyone.</h1>
+    <p>AgriConnect connects farmers directly with consumers, reducing unnecessary intermediaries while making price, quality, stock and farm origin visible.</p>
+    <div class="actions">
+      <button class="btn primary" onclick="showMarketplace()">🛒 Shop Fresh Produce</button>
+      <button class="btn secondary" onclick="showFarmer()">👨‍🌾 Sell Your Produce</button>
+    </div>
+   </div>
+   <div class="heroCard">
+    <h2>One platform. Fewer middlemen.</h2>
+    <p>Farmer → AgriConnect → Consumer</p>
+    <div class="notice">Live listings · Transparent prices · Traceable farms · Order tracking</div>
+    <button class="btn secondary" onclick="showQuality()">🤖 AI Quality Check</button>
+   </div>
+  </section>
+  <h2>Built around the real problem</h2>
+  <div class="grid">
+   <div class="card"><h3>👨‍🌾 Direct Listings</h3><p class="muted">Farmers list produce directly.</p></div>
+   <div class="card"><h3>💰 Fair Pricing</h3><p class="muted">Consumer sees the farmer's price.</p></div>
+   <div class="card"><h3>📦 Live Stock</h3><p class="muted">Stock updates after every order.</p></div>
+   <div class="card"><h3>🔎 Traceability</h3><p class="muted">See farm and location details.</p></div>
+  </div>
+ </main>`;
+}
+
+function showMarketplace(){
+ let cat="All",q="";
+ document.getElementById("app").innerHTML=`
+ <main>
+  ${navTitle("Fresh Produce Marketplace","Buy directly from farmers.")}
+  <input id="search" class="search" placeholder="Search vegetables, fruits or farmers...">
+  <div class="filters">
+   <button class="active" onclick="filterMarket('All',this)">All</button>
+   <button onclick="filterMarket('Vegetables',this)">Vegetables</button>
+   <button onclick="filterMarket('Fruits',this)">Fruits</button>
+   <button onclick="filterMarket('Leafy Greens',this)">Leafy Greens</button>
+  </div>
+  <div id="marketGrid" class="grid"></div>
+ </main>`;
+ document.getElementById("search").addEventListener("input",e=>{q=e.target.value.toLowerCase();renderMarket(cat,q);});
+ renderMarket(cat,q);
+}
+function filterMarket(c,btn){document.querySelectorAll(".filters button").forEach(b=>b.classList.remove("active"));btn.classList.add("active");renderMarket(c,document.getElementById("search").value.toLowerCase());}
+function renderMarket(cat,q=""){
+ const list=products.filter(p=>(cat==="All"||p.category===cat)&&(!q||`${p.name} ${p.farmer} ${p.location}`.toLowerCase().includes(q)));
+ document.getElementById("marketGrid").innerHTML=list.length?list.map(p=>`
+ <div class="product">
+  <img src="https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=700&q=80" alt="${esc(p.name)}">
+  <div class="productBody">
+   <span class="tag">${esc(p.category||"Produce")}</span>
+   <h2>${esc(p.name||p.crop)}</h2>
+   <p class="muted">👨‍🌾 ${esc(p.farmer||"Partner Farmer")}<br>📍 ${esc(p.location||"Local Farm")}</p>
+   <div class="price">${money(p.price)} / kg</div>
+   <p>📦 ${Number(p.quantity||0)} kg · Grade ${esc(p.quality||"A")}</p>
+   <button class="btn primary" style="width:100%" onclick="addToCart('${esc(p.id)}')">+ Add</button>
+  </div>
+ </div>`).join(""):`<div class="card full">No matching produce found.</div>`;
+}
+
+function addToCart(id){
+ const p=findProduct(id); if(!p)return;
+ const existing=cart.find(x=>String(x.id)===String(id));
+ if(existing)existing.qty++; else cart.push({id,qty:1});
+ updateCartCount(); openCart();
+}
+function updateCartCount(){document.getElementById("cartCount").textContent=cart.reduce((s,x)=>s+x.qty,0);}
+function changeQty(id,delta){
+ const item=cart.find(x=>String(x.id)===String(id)); if(!item)return;
+ item.qty+=delta;if(item.qty<=0)cart=cart.filter(x=>String(x.id)!==String(id));
+ updateCartCount();renderCart();
+}
+function cartHTML(){
+ return `<div class="modalWrap" id="cartModal" onclick="if(event.target.id==='cartModal')closeModal()"><div class="modal" style="max-width:650px"><div class="orderHead"><h2>🛒 Your Cart</h2><button class="btn secondary" onclick="closeModal()">×</button></div><div id="cartItems"></div><hr><div id="cartTotal"></div></div></div>`;
+}
+function openCart(){document.getElementById("modalRoot").innerHTML=cartHTML();renderCart();}
+function renderCart(){
+ const box=document.getElementById("cartItems"),tot=document.getElementById("cartTotal");if(!box)return;
+ if(!cart.length){box.innerHTML="<p class='muted'>Your cart is empty.</p>";tot.innerHTML="";return;}
+ let sub=0;
+ box.innerHTML=cart.map(i=>{const p=findProduct(i.id);if(!p)return "";const t=Number(p.price)*i.qty;sub+=t;return `<div class="listing"><div><b>${esc(p.name)}</b><div class="muted">${money(p.price)}/kg</div><div><button class="btn secondary" onclick="changeQty('${esc(i.id)}',-1)">−</button> ${i.qty} <button class="btn secondary" onclick="changeQty('${esc(i.id)}',1)">+</button></div></div><b>${money(t)}</b></div>`}).join("");
+ const total=sub+(sub?20:0);
+ tot.innerHTML=`<div style="display:flex;justify-content:space-between"><span>Subtotal</span><b>${money(sub)}</b></div><div style="display:flex;justify-content:space-between;margin:8px 0"><span>Delivery</span><b>${money(sub?20:0)}</b></div><h2 style="display:flex;justify-content:space-between">Total <span>${money(total)}</span></h2><div class="card" style="margin-top:18px;padding:18px">
+  <h3>📍 Delivery Details</h3>
+  <input id="customerName" class="search" style="margin:6px 0" placeholder="Full Name *" required>
+  <input id="customerPhone" class="search" style="margin:6px 0" placeholder="Phone Number *" required>
+  <textarea id="customerAddress" class="search" style="margin:6px 0;min-height:90px;resize:vertical" placeholder="Full Delivery Address *"></textarea>
+  <input id="customerCity" class="search" style="margin:6px 0" placeholder="City *" value="Hyderabad">
+  <button class="btn primary" style="width:100%;margin-top:8px" onclick="placeOrder()">Confirm Address & Place Order</button>
+</div>`;
+}
+function closeModal(){document.getElementById("modalRoot").innerHTML="";}
+
+async function placeOrder(){
+ if(!cart.length)return alert("Cart is empty.");
+
+ const customerName=(document.getElementById("customerName")?.value||"").trim();
+ const phone=(document.getElementById("customerPhone")?.value||"").trim();
+ const address=(document.getElementById("customerAddress")?.value||"").trim();
+ const city=(document.getElementById("customerCity")?.value||"").trim();
+
+ if(!customerName||!phone||!address||!city){
+   return alert("Please enter your name, phone number and complete delivery address.");
+ }
+ if(phone.replace(/\D/g,"").length<10){
+   return alert("Please enter a valid 10-digit phone number.");
+ }
+
+ const items=cart.map(i=>{
+   const p=findProduct(i.id);
+   return {
+     serverId:Number.isFinite(Number(p?.id))?Number(p.id):undefined,
+     productId:p?.id,
+     name:p?.name||p?.crop,
+     crop:p?.crop||p?.name,
+     qty:i.qty,
+     quantity:i.qty,
+     price:Number(p?.price||0),
+     farmer:p?.farmer||"Local Farmer",
+     farmerId:p?.farmerId||"FARM001"
+   };
+ });
+ const subtotal=items.reduce((s,i)=>s+i.quantity*i.price,0);
+ const total=subtotal+20;
+ const fullAddress=`${address}, ${city}`;
+
+ try{
+   const r=await fetch(API+"/orders",{
+     method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({
+       customer:customerName,
+       customerId:"CUSTOMER001",
+       phone,
+       items,
+       total,
+       address:fullAddress,
+       location:city
+     })
+   });
+   if(!r.ok){
+     const err=await r.json().catch(()=>({}));
+     throw new Error(err.message||"Order failed");
+   }
+   await loadData();
+   cart=[];updateCartCount();closeModal();showOrders();
+   alert("Order placed successfully!");
+ }catch(e){
+   alert(e.message||"Could not place order. Make sure the backend server is running.");
+ }
+}
+
+function showOrders(){
+ document.getElementById("app").innerHTML=`<main>${navTitle("Your Orders","Track your AgriConnect orders.")}<div id="ordersBox"></div></main>`;
+ renderOrders();
+}
+function renderOrders(){
+ const box=document.getElementById("ordersBox");if(!box)return;
+ if(!orders.length){box.innerHTML=`<div class="card"><h3>No orders yet</h3><button class="btn primary" onclick="showMarketplace()">Shop now</button></div>`;return;}
+ box.innerHTML=orders.slice().reverse().map(o=>{
+  const idx=Math.max(0,stages.indexOf(o.status||"Order Placed"));
+  return `<div class="order"><div class="orderHead"><div><h2>Order #${esc(o.id||"")}</h2><p class="muted">${money(o.total)} · ${esc(o.location||"Hyderabad")}</p></div><div class="status">${esc(o.status||"Order Placed")}</div></div><div class="timeline">${stages.map((s,i)=>`<div class="step ${i<=idx?"done":""}">○ ${s}</div>`).join("")}</div></div>`;
+ }).join("");
+}
+
+function showFarmer(){
+ const farmer=currentUser.role==="farmer"?currentUser.id:"FARM001";
+ const mine=products.filter(p=>String(p.farmerId||"")===farmer);
+ const incoming=orders.filter(o=>Array.isArray(o.items)?o.items.some(i=>String(i.farmerId||"")===farmer):true);
+ document.getElementById("app").innerHTML=`<main>
+ ${navTitle("Farmer Dashboard","Manage listings, earnings and incoming orders.")}
+ <div class="stats"><div class="stat"><b>${mine.length}</b><div>Active listings</div></div><div class="stat"><b>${mine.reduce((s,p)=>s+Number(p.quantity||0),0)} kg</b><div>Available stock</div></div><div class="stat"><b>${money(incoming.reduce((s,o)=>s+Number(o.total||0),0))}</b><div>Sales tracked</div></div><div class="stat"><b>Direct</b><div>Consumer connection</div></div></div>
+ <div class="layout2">
+  <div class="card"><h2>➕ Add New Produce</h2><form id="produceForm" class="form">
+   <label>Crop / Product *<input name="crop" required placeholder="Tomato"></label>
+   <label>Category *<select name="category"><option>Vegetables</option><option>Fruits</option><option>Leafy Greens</option></select></label>
+   <label>Quantity (kg) *<input name="quantity" type="number" min="1" required></label>
+   <label>Price / kg (₹) *<input name="price" type="number" min="1" required></label>
+   <label>Quality *<select name="quality"><option>A</option><option>B</option><option>C</option></select></label>
+   <label>Available Date *<input name="availableDate" type="date" required></label>
+   <label class="full">Farm / Village Location<input name="location" value="Medchal, Telangana"></label>
+   <button class="btn primary full">Add Produce</button>
+  </form></div>
+  <div class="card"><h2>📦 My Produce</h2><div>${mine.length?mine.map(p=>`<div class="listing"><div><b>${esc(p.crop||p.name)} — ${money(p.price)}/kg</b><div class="muted">${p.quantity} kg · Grade ${esc(p.quality)} · ${esc(p.location||"")}</div></div><button class="btn secondary" onclick="removeProduce('${esc(p.id)}')">Remove</button></div>`).join(""):"<p class='muted'>No farmer listings yet.</p>"}</div></div>
+ </div>
+ <div class="card" style="margin-top:20px"><h2>📥 Incoming Orders</h2><div id="incomingOrders"></div></div>
+ </main>`;
+ document.getElementById("produceForm").addEventListener("submit",addProduce);
+ renderIncoming(farmer);
+}
+function renderIncoming(farmer){
+ const box=document.getElementById("incomingOrders");if(!box)return;
+ const list=orders.filter(o=>Array.isArray(o.items)?o.items.some(i=>String(i.farmerId||"")===farmer):true);
+ box.innerHTML=list.length?list.map(o=>`<div class="listing"><div><b>Order #${esc(o.id)}</b><div class="muted">${money(o.total)} · ${esc(o.location||"Hyderabad")}</div></div><div><select onchange="updateOrderStatus('${esc(o.id)}',this.value)">${stages.map(s=>`<option ${s===(o.status||"Order Placed")?"selected":""}>${s}</option>`).join("")}</select></div></div>`).join(""):"<p class='muted'>No incoming orders for this farmer yet.</p>";
+}
+async function updateOrderStatus(id,status){
+ try{
+  const r=await fetch(API+"/orders/"+encodeURIComponent(id)+"/status",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});
+  if(!r.ok)throw new Error();
+  await loadData();showFarmer();
+ }catch(e){alert("Could not update order status.");}
+}
+async function addProduce(e){
+ e.preventDefault();const f=new FormData(e.target);
+ const body={crop:f.get("crop"),category:f.get("category"),quantity:Number(f.get("quantity")),price:Number(f.get("price")),quality:f.get("quality"),availableDate:f.get("availableDate"),location:f.get("location"),farmer:"Ramesh Kumar",farmerId:"FARM001"};
+ try{const r=await fetch(API+"/produce",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error();await loadData();showFarmer();alert("Produce added successfully!");}
+ catch(e){alert("Could not add produce. Make sure the backend is running.");}
+}
+async function removeProduce(id){
+ if(!confirm("Remove this listing?"))return;
+ try{const r=await fetch(API+"/produce/"+encodeURIComponent(id),{method:"DELETE"});if(!r.ok)throw new Error();await loadData();showFarmer();}catch(e){alert("Could not remove listing.");}
+}
+
+function showAdmin(){
+ if(currentUser.role!=="admin"){alert("Login as Admin first.");return;}
+ const revenue=orders.reduce((s,o)=>s+Number(o.total||0),0);
+ document.getElementById("app").innerHTML=`<main>${navTitle("Admin Dashboard","Monitor the complete farm-to-consumer network.")}
+ <div class="stats"><div class="stat"><b>${orders.length}</b><div>Total Orders</div></div><div class="stat"><b>${money(revenue)}</b><div>Platform Sales</div></div><div class="stat"><b>${products.length}</b><div>Active Listings</div></div><div class="stat"><b>${products.reduce((s,p)=>s+Number(p.quantity||0),0)} kg</b><div>Available Stock</div></div></div>
+ <div class="card"><h2>📊 Live Produce</h2><table class="adminTable"><thead><tr><th>Product</th><th>Farmer</th><th>Price</th><th>Stock</th><th>Quality</th></tr></thead><tbody>${products.map(p=>`<tr><td>${esc(p.crop||p.name)}</td><td>${esc(p.farmer)}</td><td>${money(p.price)}</td><td>${p.quantity} kg</td><td>${esc(p.quality)}</td></tr>`).join("")}</tbody></table></div>
+ </main>`;
+}
+
+function showQuality(){
+ document.getElementById("app").innerHTML=`<main><div class="card qualityBox">${navTitle("🤖 AI Quality Check","Upload a produce image for a demonstration quality assessment.")}<input id="qualityFile" type="file" accept="image/*"><div id="qualityResult" class="notice" style="margin-top:20px">Select an image to start the demo.</div></div></main>`;
+ document.getElementById("qualityFile").addEventListener("change",e=>{
+  if(!e.target.files[0])return;
+  const score=Math.floor(75+Math.random()*24),grade=score>=90?"A":score>=82?"B":"C";
+  const note=grade==="A"?"Fresh-looking produce. Suitable for direct sale.":grade==="B"?"Acceptable quality. Recommended for quick sale.":"Lower visual quality. Inspect manually before sale.";
+  document.getElementById("qualityResult").innerHTML=`<div class="score">${score}/100</div><h2>Grade ${grade}</h2><p>${note}</p><small>Demo AI assessment based on image selection. For SIH production deployment, connect a trained computer-vision model.</small>`;
+ });
+}
+
+function openLogin(){
+ document.getElementById("modalRoot").innerHTML=`<div class="modalWrap" id="loginModal"><div class="modal"><h2>Login</h2><label>Role<select id="loginRole"><option value="consumer">Consumer</option><option value="farmer">Farmer</option><option value="admin">Admin</option></select></label><label>ID<input id="loginId" placeholder="FARM001 / ADMIN001"></label><label>Password<input id="loginPass" type="password" placeholder="Any password for demo"></label><button class="btn primary" style="width:100%" onclick="login()">Login</button><button class="btn secondary" style="width:100%;margin-top:8px" onclick="closeModal()">Cancel</button></div></div>`;
+}
+function login(){
+ const role=document.getElementById("loginRole").value,id=document.getElementById("loginId").value.trim();
+ if(role==="farmer"&&id!=="FARM001")return alert("Use demo Farmer ID: FARM001");
+ if(role==="admin"&&id!=="ADMIN001")return alert("Use demo Admin ID: ADMIN001");
+ currentUser={role,id,name:role==="farmer"?"Ramesh Kumar":role==="admin"?"Administrator":"Consumer"};
+ closeModal();
+ if(role==="farmer")showFarmer(); else if(role==="admin")showAdmin(); else showMarketplace();
+}
+async function goFarmer(){currentUser={role:"farmer",id:"FARM001",name:"Ramesh Kumar"};showFarmer();}
+async function boot(){await loadData();showHome();}
+boot();
+</script>
+</body>
+</html>
